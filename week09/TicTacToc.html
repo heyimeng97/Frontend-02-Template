@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicTacTok</title>
+    <style>
+        .cell{
+            height: 100px;
+            width: 100px;
+            background-color: lightblue;
+            display: inline-block;
+            border: solid 1px white;
+            vertical-align: middle;
+
+            /* line-height: 100px; */
+            font-size: 80px;
+            text-align: center;
+        }
+    </style>
+
+    <div id="board"></div>
+
+    <script>
+
+        // use 2D array
+        let pattern = [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ];
+
+        let color = 1;
+        let gameOver = false;
+        function userMove(x, y) {
+            pattern[x][y] = color;
+            if(check(pattern, color)){
+                gameOver = true;
+                alert(color === 2 ? "X is winner" : " O is winner.")
+            }
+            color = 3 - color;
+            show();
+            computerMove();
+        }
+
+        function computerMove() {
+            let choice = bestChoice(pattern, color);
+            if(choice.point){
+                pattern[choice.point[0]][choice.point[1]] = color;
+            }
+            if(check(pattern, color)) {
+                gameOver = true;
+                alert(color === 2 ? "X is winner" : " O is winner.")
+            }
+            color = 3 - color;
+            show();
+        }
+
+        function show() {
+            let board = document.getElementById("board");
+            board.innerHTML = "";
+
+            for(let i = 0; i < 3; i++){
+                for(let j = 0; j < 3; j++){
+                    let cell = document.createElement('div');
+                    cell.classList.add('cell')
+                    cell.innerText =
+                        pattern[i][j] === 2 ? "X" :
+                            pattern[i][j] === 1 ? "O" : "";
+
+                    // if div already have xo or game is over , should not be modified.
+                    if(!gameOver && pattern[i][j] === 0){
+                        cell.addEventListener('click', () => userMove(i, j));
+                    }
+                    board.appendChild(cell);
+                }
+                board.appendChild(document.createElement('br'))
+            }
+        }
+
+        function check(pattern, color) {
+            // check each row
+            for(let i = 0; i < 3; i++) {
+                let win = true;
+                for(let j = 0; j < 3; j++) {
+                    if(pattern[i][j] !== color) {
+                        win = false;
+                    }
+                }
+                if(win) {
+                    return true;
+                }
+            }
+
+            // check column
+            for(let i = 0; i < 3; i++) {
+                let win = true;
+                for(let j = 0; j < 3; j++){
+                    if(pattern[j][i] !== color){
+                        win = false;
+                    }
+                }
+                if(win) {
+                    return true;
+                }
+            };
+
+            // check  left diag direction
+            {
+                let win = true;
+                for(let i = 0; i < 3; i++){
+                    if(pattern[i][i] !== color){
+                        win = false;
+                    }
+                }
+                if(win) {
+                    return true;
+                }
+            }
+
+            // check right diag direction
+            {
+                let win = true;
+                for(let i = 0; i < 3; i++) {
+                    if(pattern[i][2 - i] !== color){
+                        win = false
+                    }
+                }
+                if(win) {
+                    return true;
+                }
+            }
+
+            // if no return true above
+            return false;
+
+        }
+
+        function clone(pattern) {
+            return JSON.parse(JSON.stringify(pattern));
+        }
+
+        function willWin(pattern, color) {
+            for(let i = 0; i < 3; i++){
+                for(let j = 0; j < 3; j++){
+                    if(pattern[i][j] !== 0) continue;
+                    let tmp = clone(pattern);
+                    tmp[i][j] = color;
+                    if(check(tmp, color)) {
+                        return [i, j];
+                    }
+                }
+            }
+            return null;
+        }
+
+        function bestChoice(pattern, color){
+
+            let result = -1
+            let point = willWin(pattern, color)
+            if(point) {
+                return {
+                    point: point,
+                    result: 1
+                }
+            }
+
+            outer:for(let i = 0; i < 3; i++) {
+                for(let j = 0; j < 3; j++){
+                    if(pattern[i][j]) continue;
+                    let tmp = clone(pattern);
+                    tmp[i][j] = color;
+                    let opp = bestChoice(tmp, 3 - color).result;
+
+                    if( -opp >= result){
+                        result = -opp;
+                        point = [i, j]
+                    }
+
+                    if(result === 1) break outer;
+                }
+            }
+            return {
+                point: point,
+                result: point ? result : 0
+            }
+
+        }
+
+        show(pattern);
+
+
+    </script>
+</html>

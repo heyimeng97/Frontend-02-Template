@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<style>
+    .cell{
+        background-color: gray;
+        width: 6px;
+        height:6px;
+        border-right:solid 1px white  ;
+        border-bottom:solid 1px white  ;
+        vertical-align: middle;
+        float:left;
+
+    }
+
+    #container{
+        width:701px;
+        overflow: hidden;
+    }
+</style>
+<body>
+<div id = container></div>
+<div>
+<button onclick="localStorage['map'] = JSON.stringify(map)">save</button>
+</div>
+</body>
+
+<script>
+    let map = localStorage['map'] ? JSON.parse(localStorage['map']) : Array(10000).fill(0);
+
+    let container = document.getElementById("container");
+    for(let y =0; y<100; y++){
+        for(let x=0; x<100; x++){
+            let cell = document.createElement("div");
+            cell.classList.add("cell");
+
+            if(map[100*y + x] === 1)
+                cell.style.backgroundColor = "black";
+
+            cell.addEventListener("mousemove", () =>{
+                if(mousedown){
+                    if(clear){
+                        cell.style.backgroundColor = "";
+                        map[100*y + x] = 0;
+                    }else{
+                        cell.style.backgroundColor = "black";
+                        map[100*y + x] = 1;
+                    }
+                }
+            })
+            container.appendChild(cell);
+        }
+    }
+
+    let mousedown = false;
+    let clear = false;
+    document.addEventListener("mousedown", e => {
+        mousedown = true;
+        clear = (e.which === 3)
+    });
+    document.addEventListener("mouseup", () => mousedown = false);
+    document.addEventListener("contextmenu", e => e.preventDefault());
+
+    function sleep(time) {
+        return new Promise((resolve, reject) => {
+            setTimeout(resolve, time);
+            console.log("resolve")
+        })
+    }
+
+
+
+
+    class Sorted{
+        constructor(data, compare) {
+            this.data = data;
+            this.compare = compare || ((a, b) => a-b);
+        }
+
+        take(){
+            if(!this.data.length)
+                return;
+            let min = this.data[0];
+            let minIndex = 0;
+
+            for(let currentDataIndex in this.data){
+                if(this.compare(this.data[currentDataIndex], min) < 0){
+                    min = this.data[currentDataIndex];
+                    minIndex = currentDataIndex;
+                }
+            }
+
+            this.data[minIndex] = this.data[this.data.length -1];
+            this.data.pop();
+            return min;
+        }
+
+        give(array){
+            this.data.push(array);
+        }
+
+
+    }
+
+    async function findPath(map, startArray, endArray){
+        let table = Object.create(map);
+        let queue = new Sorted([startArray], ((a,b) => distance(a) - distance(b)));
+        console.log(queue.length)
+
+        function distance(Point){
+            return Math.abs(endArray[0] - Point[0]) + Math.abs(endArray[1] - Point[1]);
+        }
+
+        async function insert(x, y, pre){
+            if(x < 0 || x >= 100 || y < 0 || y >= 100)
+                return;
+            if(table[100*y + x])
+                return;
+            await sleep(50);
+            container.children[y*100 + x].style.backgroundColor = "lightgreen";
+            table[y*100 + x] = pre;
+            queue.give([x,y])
+        }
+
+        while(queue.data.length){
+            let [x,y] = queue.take();
+            console.log(x,y);
+            if(x === endArray[0] && y === endArray[1]) {
+                let path = [];
+
+                while (x !== startArray[0] || y !== startArray[1]) {
+                    path.push(map[y* 100 + x]);
+                    [x,y] = table[y*100 + x];
+                    container.children[y*100+x].style.backgroundColor = "purple";
+                }
+                return path;
+            }
+
+            await insert(x-1,y, [x,y]);
+            await insert(x,y-1, [x,y]);
+            await insert(x,y+1, [x,y]);
+            await insert(x+1,y, [x,y]);
+
+        }
+        return false;
+
+    }
+
+</script>
+</html>
